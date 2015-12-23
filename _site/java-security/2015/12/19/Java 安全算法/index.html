@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Java 安全算法</title>
+  <meta name="description" content="[TOC]">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://kylo-zhang.github.io/jekyllblog/java-security/2015/12/19/Java%20%E5%AE%89%E5%85%A8%E7%AE%97%E6%B3%95">
+  <link rel="alternate" type="application/rss+xml" title="Kylo" href="http://kylo-zhang.github.io/jekyllblog/feed.xml">
+  <script src="/js/jquery-2.1.4.min.js"></script>
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">Kylo</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+      <div class="trigger">
+        <form id="search-form">
+            <input type="text" id="google-search" class="search-query" placeholder="Search">
+        </form>
+      </div>
+    </nav>
+
+  </div>
+  <script type="text/javascript">
+    $("#search-form").submit(function(){
+      var query = document.getElementById("google-search").value;
+      window.open("http://google.com/search?q=" + query+ "%20site:" + "http://kylo-zhang.github.io/jekyllblog/");
+    });
+
+    <!--多说js加载开始，一个页面只需要加载一次 -->
+      var duoshuoQuery = {short_name:""};
+      (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = 'http://static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+      })();
+      <!--多说js加载结束，一个页面只需要加载一次 -->
+
+      <!--回到顶部开始-->
+      jQuery.noConflict();
+      jQuery(document).ready(function(){
+        var backToTopTxt = "▲", backToTopEle = jQuery('<div class="backToTop"></div>').appendTo(jQuery("body")).text(backToTopTxt).attr("title","Back top top").click(function() {
+            jQuery("html, body").animate({ scrollTop: 0 }, 120);
+        }), backToTopFun = function() {
+            var st = jQuery(document).scrollTop(), winh = jQuery(window).height();
+            (st > 200)? backToTopEle.show(): backToTopEle.hide();
+            //IE6下的定位
+            if (!window.XMLHttpRequest) {
+                backToTopEle.css("top", st + winh - 166);
+            }
+        };
+
+        backToTopEle.hide();
+            jQuery(window).bind("scroll", backToTopFun);
+        jQuery('div.main a,div.pic a').attr('target', '_blank');
+      });
+      <!--回到顶部结束-->
+
+    </script>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Java 安全算法</h1>
+    <p class="post-meta"><time datetime="2015-12-19T21:14:38+08:00" itemprop="datePublished">Dec 19, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>[TOC]</p>
+
+<h1>摘要</h1>
+
+<p>本文章的内容是对<a href="http://www.imooc.com/space/teacher/id/315464">慕课网的 moocer 老师对 Java 安全方面一些列课程的整理</a>，旨在对 Java 安全算法相关的知识进行梳理文中对部分相似内容进行了概括说明，并进行了一些比对，方便记忆以及日后回顾。</p>
+
+<h1>Java安全组成</h1>
+
+<p>Java 安全主要由 <strong>JCA</strong> (Java Cryptography Architecture)、<strong>JCE</strong> (Java Cryptography Extension)、 <strong>JSSE</strong> (Java Secure Socket Extension)、 <strong>JAAS</strong> (Java Authentication and Authentication Service) 组成。  </p>
+
+<ul>
+<li>JCA<br>
+提供基本的加密框架，如消息摘要、数字签名等；<br></li>
+<li>JCE<br>
+JCA 上的扩展，提供加密算法、消息摘要、密钥管理等，如 DES、 AES、 RSA 等，主要在 jdk 包；<br></li>
+<li>JSSE<br>
+提供基于 SSL 的安全套接字加密功能，主要用于网络传输；<br></li>
+<li>JAAS<br>
+提供 Java 系统的身份验证的功能。<br></li>
+</ul>
+
+<p>JCA 和 JCE 只是提供接口，可以进行第三方扩展，通过配置第三方 Provider实现:  </p>
+
+<ol>
+<li><p>修改 /jdk/jre/lib/security/java.security：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">security.provider.11 = com.test.Provider  
+</code></pre></div></li>
+<li><p>另外还可以通过 Java 代码中调用 security 类的 addProvider() 方法：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">Security.addProvider(Provider provider);  
+</code></pre></div></li>
+</ol>
+
+<h2>相关Java包、类</h2>
+
+<ul>
+<li>java.security<br>
+为安全框架提供接口和类，仅能实现消息摘要；<br></li>
+<li>javax.crypto<br>
+用于安全消息摘要，消息认证（鉴别）码，能实现完整安全框架；<br></li>
+<li>java.net.ssl<br>
+网络加解密操作，HttpsURLConnection、SSLContext 类等。<br></li>
+</ul>
+
+<h2>第三方扩展</h2>
+
+<p>第三方扩展相对 jdk 的基础加密实现更加完善的高强度的算法。  </p>
+
+<ul>
+<li><p>Bouncy Castle（以下简称BC）  </p></li>
+<li><p>Commons Codec（以下简称CC）<br>
+Apache针对安全的支持，主要 Base64、二进制、十六进制、字符集编码、URL编码/解码。  </p></li>
+</ul>
+
+<h1>算法实现</h1>
+
+<h2>Base64</h2>
+
+<p>Base64是一种基于64个可打印字符来表示二进制数据的表示方法,常用于在通常处理文本数据的场合，表示、传输、存储一些二进制数据。包括MIME的email、在XML中存储复杂数据。</p>
+
+<ul>
+<li><p>jdk 通过 BASE64Encoder类和 BASE64Decoder 类进行加密和解密：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">BASE64Encoder encoder = new BASE64Encoder();
+String encode = encoder.encode(src.getBytes());
+System.out.println(&quot;encode : &quot; + encode);
+
+BASE64Decoder decoder = new BASE64Decoder();
+System.out.println(&quot;decode : &quot; + new String(decoder.decodeBuffer(encode)));
+</code></pre></div></li>
+<li><p>BC 和 CC 都通过自己包中的 Base64 类的静态方法进行加解密：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">//BC
+byte[] encodeBytes = Base64.encodeBase64(src.getBytes());
+System.out.println(&quot;encode : &quot; + new String(encodeBytes));
+
+byte[] decodeBytes = Base64.decodeBase64(encodeBytes);
+System.out.println(&quot;decode : &quot; + new String(decodeBytes));    
+
+//CC
+byte[] encodeBytes = org.bouncycastle.util.encoders.Base64.encode(src.getBytes());
+System.out.println(&quot;encode : &quot; + new String(encodeBytes));
+
+byte[] decodeBytes = org.bouncycastle.util.encoders.Base64.decode(encodeBytes);
+System.out.println(&quot;decode : &quot; + new String(decodeBytes));
+</code></pre></div></li>
+</ul>
+
+<h2>消息摘要算法</h2>
+
+<p>消息摘要算法的主要作用是验证数据完整性、数字签名核心算法。主要有 MD (Message Digest) 消息摘要、 SHA (Secure Hash Algorithm) 安全散列、 MAC（Message Authentication Code） 消息认证码。</p>
+
+<h3>MD (Message Digest)</h3>
+
+<p>MD 消息摘要在用户注册登录中的应用流程大致如下：  </p>
+
+<ul>
+<li>注册<br></li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">1. 用户注册
+2. 服务器对密码进行消息摘要
+3. 信息持久化（保存）
+4. 返回注册结果  
+</code></pre></div>
+<ul>
+<li>登录<br></li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">1. 用户登录
+2. 服务器对密码进行消息摘要
+3. 通过用户名及摘要查询，对比两次摘要
+4. 返回登录结果  
+</code></pre></div>
+<p>主要有 MD2、 MD4、 MD5 三种。  </p>
+
+<table>
+    <tr>
+        <th>算法</th>
+        <th>摘要长度</th>
+        <th>实现方</th>
+    </tr>
+    <tr>
+        <td>MD2</td>
+        <td>128</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>MD4</td>
+        <td>128</td>
+        <td>BC</td>
+    </tr>
+    <tr>
+        <td>MD5</td>
+        <td>128</td>
+        <td>jdk</td>
+    </tr>
+</table>
+
+<ul>
+<li><p>jdk 通过 MessageDigest 类实现：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">MessageDigest md = MessageDigest.getInstance(&quot;MD5&quot;);
+byte[] md5Bytes = md.digest(src.getBytes());
+System.out.println(&quot;JDK MD5 : &quot; + Hex.encodeHexString(md5Bytes));
+</code></pre></div></li>
+<li><p>BC 通过 Digest 接口实现：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">Digest digest = new MD5Digest();
+digest.update(src.getBytes(), 0, src.getBytes().length);
+byte[] md5Bytes = new byte[digest.getDigestSize()];
+digest.doFinal(md5Bytes, 0);
+System.out.println(&quot;BC MD5 : &quot; + org.bouncycastle.util.encoders.Hex.toHexString(md5Bytes));
+</code></pre></div></li>
+<li><p>CC 通过工具类 DigestUtils 实现：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">System.out.println(&quot;CC MD5 : &quot; + DigestUtils.md5Hex(src.getBytes()));
+</code></pre></div></li>
+</ul>
+
+<h3>SHA (Secure Hash Algorithm)</h3>
+
+<p>SHA 是固定长度的安全散列算法，与 MD 不同，不同明文的结果差异很大，主要有 SHA-1、 SHA-2 (SHA-224、SHA-256、SHA-384、SHA-512)。   </p>
+
+<p>SHA 消息摘要的应用流程大致如下：  </p>
+
+<ol>
+<li>发送方公布消息摘要算法</li>
+<li>对待发布消息进行摘要处理</li>
+<li>发送摘要消息</li>
+<li>发送消息</li>
+<li>接收方消息鉴别</li>
+</ol>
+
+<p>联合登录采用在原始信息中进行以下信息：  </p>
+
+<ol>
+<li>约定Key</li>
+<li>增加时间戳</li>
+<li>排序<br></li>
+</ol>
+
+<p>生成规定的字符，如：<code>http://**?msg=12jlgj32lj&amp;timestamp=1309488734</code>。然后再对结果进行消息摘要。  </p>
+
+<table>
+    <tr>
+        <th>算法</th>
+        <th>摘要长度</th>
+        <th>实现方</th>
+    </tr>
+    <tr>
+        <td>SHA-1</td>
+        <td>160</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>SHA-224</td>
+        <td>224</td>
+        <td>BC</td>
+    </tr>
+    <tr>
+        <td>SHA-256</td>
+        <td>256</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>SHA-384</td>
+        <td>384</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>SHA-512</td>
+        <td>512</td>
+        <td>jdk</td>
+    </tr>
+</table>
+
+<ul>
+<li><p>jdk 通过 MessageDigest 类实现：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">MessageDigest md = MessageDigest.getInstance(&quot;SHA&quot;);
+md.update(src.getBytes());
+System.out.println(&quot;jdk sha-1 : &quot; + Hex.encodeHexString(md.digest()));
+</code></pre></div></li>
+<li><p>bc 通过 Digest 接口实现：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">Digest digest = new SHA224Digest();
+digest.update(src.getBytes(), 0, src.getBytes().length);
+byte[] sha224Bytes = new byte[digest.getDigestSize()];
+digest.doFinal(sha224Bytes, 0);
+System.out.println(&quot;bc sha-224 : &quot; + org.bouncycastle.util.encoders.Hex.toHexString(sha224Bytes));
+</code></pre></div></li>
+<li><p>CC 通过工具类 DigestUtils 实现：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">System.out.println(&quot;cc sha1 - 1 :&quot; + DigestUtils.sha1Hex(src.getBytes()));
+System.out.println(&quot;cc sha1 - 2 :&quot; + DigestUtils.sha1Hex(src));
+</code></pre></div></li>
+</ul>
+
+<h3>MAC（Message Authentication Code）</h3>
+
+<p>MAC 兼容了 MD 和 SHA 算法的特点， 也称为HMAC (keyed-Hash Message Authentication Code) 含有密钥的散列函数算法。  </p>
+
+<p>MAC算法的消息传递：  </p>
+
+<ol>
+<li>发送方公布消息摘要算法</li>
+<li>构建密钥</li>
+<li>发送密钥给接收方</li>
+<li>对待发消息进行摘要处理</li>
+<li>发送消息摘要</li>
+<li>发送消息</li>
+<li>接收方进行消息鉴别</li>
+</ol>
+
+<p>包含 MD 和 SHA 两个系列：  </p>
+
+<ul>
+<li>MD 系列：HmacMD2、HmacMD4、HmacMD5</li>
+<li>SHA 系列：HmacSHA1、HmacSHA224、HmacSHA256、HmacSHA384、HmacSHA512</li>
+</ul>
+
+<table>
+    <tr>
+        <th>算法</th>
+        <th>摘要长度</th>
+        <th>实现方</th>
+    </tr>
+    <tr>
+        <td>HmacMD2</td>
+        <td>128</td>
+        <td>BC</td>
+    </tr>
+    <tr>
+        <td>HmacMD4</td>
+        <td>128</td>
+        <td>BC</td>
+    </tr>
+    <tr>
+        <td>HmacMD5</td>
+        <td>128</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>HmacSHA1</td>
+        <td>160</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>HmacSHA224</td>
+        <td>224</td>
+        <td>BC</td>
+    </tr>
+    <tr>
+        <td>HmacSHA256</td>
+        <td>256</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>HmacSHA384</td>
+        <td>384</td>
+        <td>jdk</td>
+    </tr>
+    <tr>
+        <td>HmacSHA512</td>
+        <td>512</td>
+        <td>jdk</td>
+    </tr>
+</table>
+
+<ul>
+<li><p>jdkHmacMD5实现</p>
+
+<p>有两种方法构建密钥：  </p></li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">1. 通过 KeyGenerator 类：  
+
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(&quot;HmacMD5&quot;);// 初始化KeyGenerator
+        SecretKey secretKey = keyGenerator.generateKey();// 产生密钥
+        byte[] key = secretKey.getEncoded();
+
+2. CC 的 Hex.decodeHex() 方法：  
+
+        byte[] key = Hex.decodeHex(new char[] {&#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;, &#39;a&#39;});
+
+对密钥进行还原，构建Mac实例，执行摘要：  
+
+    SecretKey restoreSecretKey = new SecretKeySpec(key, &quot;HmacMD5&quot;);// 还原密钥
+    Mac mac = Mac.getInstance(restoreSecretKey.getAlgorithm());// 实例化MAC
+    mac.init(restoreSecretKey);// 初始化Mac
+    byte[] hmacMD5Bytes = mac.doFinal(src.getBytes());// 执行摘要
+    System.out.println(&quot;jdk hmacMD5 : &quot; + Hex.encodeHexString(hmacMD5Bytes));
+</code></pre></div>
+<ul>
+<li><p>bcHmacMD5 实现，直接使用 HMac 类</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">HMac hmac = new HMac(new MD5Digest());
+hmac.init(new KeyParameter(org.bouncycastle.util.encoders.Hex.decode(&quot;aaaaaaaaaa&quot;)));
+hmac.update(src.getBytes(), 0, src.getBytes().length);
+
+byte[] hmacMD5Bytes = new byte[hmac.getMacSize()];//执行摘要
+hmac.doFinal(hmacMD5Bytes, 0);
+
+System.out.println(&quot;bc hmacMD5 : &quot; + org.bouncycastle.util.encoders.Hex.toHexString(hmacMD5Bytes));
+</code></pre></div></li>
+</ul>
+
+<h2>对称加密算法</h2>
+
+<p>对称加密算法是一种初等的加密算法，其特点是加密密钥和解密密钥相同，主要有DES、3DES、AES、PBE、IDEA。</p>
+
+<p>除了PBE之外，其他4种对称加密算法的实现主要由以下4步：</p>
+
+<ol>
+<li>生成Key</li>
+<li>转换Key</li>
+<li>加密</li>
+<li>解密</li>
+</ol>
+
+<p>具体的代码如下：  </p>
+
+<ul>
+<li><p>Key 由 keyGenerator 类生成：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyGenerator keyGenerator = KeyGenerator.getInstance(&quot;DES&quot;);
+keyGenerator.init(56);
+SecretKey secretKey = keyGenerator.generateKey();
+byte[] bytesKey = secretKey.getEncoded();
+</code></pre></div></li>
+<li><p>然后通过 SecretKeyFactory 类进行转换：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">DESKeySpec desKeySpec = new DESKeySpec(bytesKey);
+SecretKeyFactory factory = SecretKeyFactory.getInstance(&quot;DES&quot;);
+Key convertSecretKey = factory.generateSecret(desKeySpec);
+</code></pre></div></li>
+<li><p>Cipher 类进行加解密：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">//加密
+Cipher cipher = Cipher.getInstance(&quot;DES/ECB/PKCS5Padding&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, convertSecretKey);
+byte[] result = cipher.doFinal(src.getBytes());
+System.out.println(&quot;jdk des encrypt : &quot; + Hex.encodeHexString(result));
+
+//解密
+cipher.init(Cipher.DECRYPT_MODE, convertSecretKey);
+result = cipher.doFinal(result);
+System.out.println(&quot;jdk des decrypt : &quot; + new String(result));
+</code></pre></div>
+<p>注意： IDEA 的 Cipher 实例获取方式略有不同：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">Cipher cipher = Cipher.getInstance(&quot;IDEA/ECB/ISO10126Padding&quot;);
+</code></pre></div></li>
+</ul>
+
+<p>下面是 PBE 的加密，也是 4 步：  </p>
+
+<ol>
+<li>初始化盐</li>
+<li>口令与密钥</li>
+<li>加密</li>
+<li>解密<br></li>
+</ol>
+
+<p>具体的代码如下：  </p>
+
+<ul>
+<li><p>盐由 SecureRandom 类生成：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">SecureRandom random = new SecureRandom();
+byte[] salt = random.generateSeed(8);
+</code></pre></div></li>
+<li><p>SecretKeyFactory 对象使用 PBEKeySpec 对象作为参数生成密钥</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">String password = &quot;imooc&quot;;
+PBEKeySpec pbeKeySpec = new PBEKeySpec(password.toCharArray());
+SecretKeyFactory factory = SecretKeyFactory.getInstance(&quot;PBEWITHMD5andDES&quot;);
+Key key = factory.generateSecret(pbeKeySpec);
+</code></pre></div></li>
+<li><p>Cipher 对象使用 PBEParameterSpec 对象作为参数初始化，然后执行加解密操作  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">//加密
+PBEParameterSpec pbeParameterSpec = new PBEParameterSpec(salt, 100);
+Cipher cipher = Cipher.getInstance(&quot;PBEWITHMD5andDES&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, key, pbeParameterSpec);
+byte[] result = cipher.doFinal(src.getBytes());
+System.out.println(&quot;jdk pbe encrypt : &quot; + Base64.encodeBase64String(result));
+
+//解密
+cipher.init(Cipher.DECRYPT_MODE, key, pbeParameterSpec);
+result = cipher.doFinal(result);
+System.out.println(&quot;jdk pbe decrypt : &quot; + new String(result));
+</code></pre></div></li>
+</ul>
+
+<h2>非对称加密算法</h2>
+
+<p>相对于对称加密算法，非对称加密算法的加密密钥和解密密钥是不同的，这样能够达到双保险的效果。主要的算法有DH、RSA、ElGamal、ECC。</p>
+
+<h4>DH</h4>
+
+<p>DH算法是非对称加密算法的起源，是密钥交换算法。该算法通过构建本地密钥解决密钥传递问题，双方密钥是对称的。</p>
+
+<p>DH算法的实现有以下5步：  </p>
+
+<ol>
+<li>初始化发送方密钥</li>
+<li>初始化接收方密钥</li>
+<li>密钥构建</li>
+<li>加密</li>
+<li>解密</li>
+</ol>
+
+<p>具体的代码实现如下：  </p>
+
+<ul>
+<li><p>发送方的 senderKeyPairGenerator 和 senderKeyPair 对象进行初始化发送方密钥 senderPublicKeyEnc：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyPairGenerator senderKeyPairGenerator = KeyPairGenerator.getInstance(&quot;DH&quot;);
+senderKeyPairGenerator.initialize(512);
+KeyPair senderKeyPair = senderKeyPairGenerator.generateKeyPair();
+byte[] senderPublicKeyEnc = senderKeyPair.getPublic().getEncoded();//发送方公钥，发送给接收方（网络、文件。。。）
+</code></pre></div></li>
+<li><p>接收方由接收的公钥 senderPublicKeyEnc 作为参数，receiverKeyFactory 对象生成 receiverPublicKey 对象，receiverPublicKey 对象得到初始化参数 dhParameterSpec 对象，同样通过 receiverKeyPairGenerator 和 receiverKeypair 对象进行初始化接收方密钥 receiverPublicKeyEnc ，同时由 receiverKeypair 对象得到接收方的 receiverPrivateKey 对象：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyFactory receiverKeyFactory = KeyFactory.getInstance(&quot;DH&quot;);
+X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(senderPublicKeyEnc);
+PublicKey receiverPublicKey = receiverKeyFactory.generatePublic(x509EncodedKeySpec);
+DHParameterSpec dhParameterSpec = ((DHPublicKey)receiverPublicKey).getParams();
+KeyPairGenerator receiverKeyPairGenerator = KeyPairGenerator.getInstance(&quot;DH&quot;);
+receiverKeyPairGenerator.initialize(dhParameterSpec);
+KeyPair receiverKeypair = receiverKeyPairGenerator.generateKeyPair();
+PrivateKey receiverPrivateKey = receiverKeypair.getPrivate();
+byte[] receiverPublicKeyEnc = receiverKeypair.getPublic().getEncoded();
+</code></pre></div></li>
+<li><p>接收方 receiverKeyAgreement 对象， 使用 receiverPrivateKey 和 receiverPublicKey 对象构建密钥 receiverDesKey ；发送方由接收的公钥 receiverPublicKeyEnc 作为参数，senderKeyFactory 对象生成 senderPublicKey 对象，senderKeyAgreement 对象使用 senderKeyPair.getPrivate() 和 senderPublicKey 对象构建密钥 senderDesKey 对象。如果 receiverDesKey 对象和 senderDesKey 对象相等，则进入加密阶段。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyAgreement receiverKeyAgreement = KeyAgreement.getInstance(&quot;DH&quot;);
+receiverKeyAgreement.init(receiverPrivateKey);
+receiverKeyAgreement.doPhase(receiverPublicKey, true);
+SecretKey receiverDesKey = receiverKeyAgreement.generateSecret(&quot;DES&quot;);
+
+KeyFactory senderKeyFactory = KeyFactory.getInstance(&quot;DH&quot;);
+x509EncodedKeySpec = new X509EncodedKeySpec(receiverPublicKeyEnc);
+PublicKey senderPublicKey = senderKeyFactory.generatePublic(x509EncodedKeySpec);
+KeyAgreement senderKeyAgreement = KeyAgreement.getInstance(&quot;DH&quot;);
+senderKeyAgreement.init(senderKeyPair.getPrivate());
+senderKeyAgreement.doPhase(senderPublicKey, true);
+SecretKey senderDesKey = senderKeyAgreement.generateSecret(&quot;DES&quot;);
+if (Objects.equals(receiverDesKey, senderDesKey)) {
+    System.out.println(&quot;双方密钥相同&quot;);
+}
+</code></pre></div></li>
+<li><p>Cipher 进行加解密操作：   </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">// 加密
+Cipher cipher = Cipher.getInstance(&quot;DES&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, senderDesKey);
+byte[] result = cipher.doFinal(src.getBytes());
+System.out.println(&quot;jdk dh encrypt : &quot; + Base64.encodeBase64String(result));
+
+// 解密
+cipher.init(Cipher.DECRYPT_MODE, receiverDesKey);
+result = cipher.doFinal(result);
+System.out.println(&quot;jdk dh decrypt : &quot; + new String(result));
+</code></pre></div></li>
+</ul>
+
+<h3>RSA</h3>
+
+<p>RSA 是唯一被广泛接受并实现的非对称算法，它用于数据加密和数字签名两个领域，也提供两种模式：</p>
+
+<ol>
+<li>公钥加密、私钥解密</li>
+<li>私钥加密、公钥解密</li>
+</ol>
+
+<p>具体代码实现如下：</p>
+
+<ul>
+<li><p>初始化密钥<br>
+KeyPairGenerator 和 KeyPair 初始化公钥和私钥，直接通过类型强制转化得到：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(&quot;RSA&quot;);
+keyPairGenerator.initialize(512);
+KeyPair keyPair = keyPairGenerator.generateKeyPair();
+RSAPublicKey rsaPublicKey = (RSAPublicKey)keyPair.getPublic();
+RSAPrivateKey rsaPrivateKey = (RSAPrivateKey)keyPair.getPrivate();
+System.out.println(&quot;Public Key : &quot; + Base64.encodeBase64String(rsaPublicKey.getEncoded()));
+System.out.println(&quot;Private Key : &quot; + Base64.encodeBase64String(rsaPrivateKey.getEncoded()));
+</code></pre></div>
+<p>私钥加密、公钥解密模式：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">// 私钥加密、公钥解密——加密
+PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(rsaPrivateKey.getEncoded());
+KeyFactory keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+Cipher cipher = Cipher.getInstance(&quot;RSA&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+byte[] result = cipher.doFinal(src.getBytes());
+System.out.println(&quot;私钥加密、公钥解密——加密 : &quot; + Base64.encodeBase64String(result));
+
+// 私钥加密、公钥解密——解密
+X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(rsaPublicKey.getEncoded());
+keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+cipher = Cipher.getInstance(&quot;RSA&quot;);
+cipher.init(Cipher.DECRYPT_MODE, publicKey);
+result = cipher.doFinal(result);
+System.out.println(&quot;私钥加密、公钥解密——解密：&quot; + new String(result));
+</code></pre></div>
+<p>公钥加密、私钥解密模式：  </p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">// 公钥加密、私钥解密——加密
+x509EncodedKeySpec = new X509EncodedKeySpec(rsaPublicKey.getEncoded());
+keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+cipher = Cipher.getInstance(&quot;RSA&quot;);
+cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+result = cipher.doFinal(src.getBytes());
+System.out.println(&quot;公钥加密、私钥解密——加密 : &quot; + Base64.encodeBase64String(result));
+
+// 公钥加密、私钥解密——解密
+pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(rsaPrivateKey.getEncoded());
+keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+cipher = Cipher.getInstance(&quot;RSA&quot;);
+cipher.init(Cipher.DECRYPT_MODE, privateKey);
+result = cipher.doFinal(result);
+System.out.println(&quot;公钥加密、私钥解密——解密：&quot; + new String(result));
+</code></pre></div></li>
+</ul>
+
+<p>这两种模式实际上都使用 PKCS8EncodedKeySpec 对象生成私钥，使用 X509EncodedKeySpec 对象生成公钥， 只是在使用 Cipher 对象时，初始化采取 Cipher.ENCRYPT<em>MODE 还是 Cipher.DECRYPT</em>MODE 的不同。</p>
+
+<h3>ElGamal</h3>
+
+<p>ElGamal 由 BC 实现，只提供公钥加密算法，其构建密钥对及加密数据传输过程如下：  </p>
+
+<ol>
+<li>接收方构建密钥对</li>
+<li>向发送方公布密钥</li>
+<li>发送方使用公钥加密</li>
+<li>发送方发送加密数据</li>
+<li>接收方使用私钥解密数据</li>
+</ol>
+
+<p>具体代码实现如下：  </p>
+
+<ul>
+<li><p>AlgorithmParameterGenerator 对象生成参数 AlgorithmParameters 对象，由该参数获得DHParameterSpec对象，然后使用该对象初始化 KeyPairGenerator：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">AlgorithmParameterGenerator algorithmParameterGenerator = AlgorithmParameterGenerator.getInstance(&quot;ElGamal&quot;);
+algorithmParameterGenerator.init(256);
+AlgorithmParameters algorithmParameters = algorithmParameterGenerator.generateParameters();
+DHParameterSpec dhParameterSpec = (DHParameterSpec)algorithmParameters.getParameterSpec(DHParameterSpec.class);
+KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(&quot;ElGamal&quot;);
+keyPairGenerator.initialize(dhParameterSpec, new SecureRandom());
+KeyPair keyPair = keyPairGenerator.generateKeyPair();
+PublicKey elGamalPublicKey = keyPair.getPublic();
+PrivateKey elGamalPrivateKey = keyPair.getPrivate();
+System.out.println(&quot;PublicKey: &quot; + Base64.encodeBase64String(elGamalPublicKey));
+System.out.println(&quot;PrivateKey: &quot; + Base64.encodeBase64String(elGamalPrivateKey));
+</code></pre></div></li>
+<li><p>接下来和RSA一样</p></li>
+</ul>
+
+<h3>数字签名算法</h3>
+
+<p>数字签名是带有密钥（公钥、私钥）的消息摘要算法，能验证数据完整性、认证数据来源、抗否认，采用的模式是：私钥签名、公钥验证。</p>
+
+<p>数字签名的主要算法有 RSA、 DSA、 ECDSA，使用这些算法的步骤大同小异，有以下3步：</p>
+
+<ol>
+<li>初始化密钥</li>
+<li>执行签名</li>
+<li>验证签名</li>
+</ol>
+
+<p>具体代码实现如下：</p>
+
+<ul>
+<li><p>使用 KeyPair 对象构建公钥私钥</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(&quot;RSA&quot;);
+keyPairGenerator.initialize(512);
+KeyPair keyPair = keyPairGenerator.generateKeyPair();
+RSAPublicKey rsaPublicKey = (RSAPublicKey)keyPair.getPublic();
+RSAPrivateKey rsaPrivateKey = (RSAPrivateKey)keyPair.getPrivate();
+</code></pre></div></li>
+<li><p>使用 Signature 对象执行签名和验证签名</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">// 执行签名
+PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(rsaPrivateKey.getEncoded());
+KeyFactory keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+Signature signature = Signature.getInstance(&quot;MD5withRSA&quot;);
+signature.initSign(privateKey);
+signature.update(src.getBytes());
+byte[] result = signature.sign();
+System.out.println(&quot;jdk rsa sign : &quot; + Hex.encodeHexString(result));
+
+// 验证签名
+X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(rsaPublicKey.getEncoded());
+keyFactory = KeyFactory.getInstance(&quot;RSA&quot;);
+PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+signature = Signature.getInstance(&quot;MD5withRSA&quot;);
+signature.initVerify(publicKey);
+signature.update(src.getBytes());
+boolean bool = signature.verify(result);
+System.out.println(&quot;jdk rsa verify : &quot; + bool);
+</code></pre></div></li>
+</ul>
+
+  </div>
+  <!-- Duoshuo Comment BEGIN -->
+    <div id="comments">
+        <div class="ds-thread" data-thread-key="/java-security/2015/12/19/Java 安全算法"  data-title="Java 安全算法 - Kylo"></div>
+    </div>
+  <!-- Duoshuo Comment END -->
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Kylo</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <!-- <li>Kylo</li> -->
+          <li><a href="mailto:kylo.zw@gmail.com">kylo.zw@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/Kylo-Zhang"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">Kylo-Zhang</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>菜鸟一枚
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
